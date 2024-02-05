@@ -2,5 +2,7 @@ node_modules
 
 /.cache
 /build
+/llamafile
 /public/build
 .env
+*.log
