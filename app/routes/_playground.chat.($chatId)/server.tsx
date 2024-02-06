@@ -12,32 +12,6 @@ async function getChatCount() {
   return keys.filter((key) => key.startsWith("chat-metadata:")).length;
 }
 
-export interface ChatMetadata {
-  id: string;
-  label: string;
-}
-
-export async function getChatMetadata(chatId: string) {
-  return await localforage
-    .getItem<ChatMetadata>(`chat-metadata:${chatId}`)
-    .then((meta): ChatMetadata | null =>
-      meta ? Object.assign(meta, { id: chatId }) : meta
-    );
-}
-
-export async function listChats() {
-  const keys = (await localforage.keys()).filter((key) =>
-    key.startsWith("chat-metadata:")
-  );
-  return Promise.all(
-    keys.map((key) => getChatMetadata(key.slice("chat-metadata:".length)))
-  ).then((chats) =>
-    chats
-      .filter((chat): chat is ChatMetadata => !!chat)
-      .sort((chatA, chatB) => -chatA.id.localeCompare(chatB.id))
-  );
-}
-
 export async function getChat(chatId: string) {
   return (
     (await localforage.getItem<["human" | "assistant", string][]>(
@@ -52,6 +26,13 @@ export async function createChatCompletion(
   signal: AbortSignal
 ): Promise<ReadableStream<string>> {
   const chat = await getChat(chatId);
+
+  if (!chat.length) {
+    await localforage.setItem(`chat-metadata:${chatId}`, {
+      label: "Chat " + ((await getChatCount()) + 1),
+    });
+  }
+
   chat.push(["human", message]);
   await localforage.setItem(`chat:${chatId}`, chat);
 
@@ -66,7 +47,7 @@ export async function createChatCompletion(
 
   const chatModel = new ChatOpenAI({
     configuration: {
-      baseURL: "http://localhost:8080/v1",
+      baseURL: await window.electronAPI.ensureLLM(),
     },
     openAIApiKey: "sk-XxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXx",
   });
@@ -83,9 +64,6 @@ export async function createChatCompletion(
       async flush() {
         chat.push(["assistant", aiMessage.trim()]);
         await localforage.setItem(`chat:${chatId}`, chat);
-        await localforage.setItem(`chat-metadata:${chatId}`, {
-          label: "Chat " + ((await getChatCount()) + 1),
-        });
       },
     })
   );

@@ -1,5 +1,11 @@
 {
-  "include": ["app/**/*", "dev-server.js", "vite.config.ts"],
+  "include": [
+    "app/**/*",
+    "dev-server.js",
+    "vite.config.ts",
+    "electron/index.js",
+    "electron/preload.js"
+  ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "types": [

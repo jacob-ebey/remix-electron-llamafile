@@ -24,7 +24,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
-import { listChats } from "./_playground.chat.($chatId)/server";
+import { listChats } from "./server";
 import { cn } from "@/lib/utils";
 
 export async function clientLoader({}: ClientLoaderFunctionArgs) {

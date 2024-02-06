@@ -1,4 +1,5 @@
 import * as React from "react";
+import { flushSync } from "react-dom";
 import {
   type ClientActionFunctionArgs,
   type ClientLoaderFunctionArgs,
@@ -16,14 +17,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useRouteFormAction } from "@/lib/forms";
 
+import { getChatMetadata } from "../_playground/server";
 import {
   createChatCompletion,
   getChat,
-  getChatMetadata,
   newId,
   StreamingMessage,
 } from "./server";
-import { flushSync } from "react-dom";
 
 export const meta = ({
   data,
@@ -75,11 +75,7 @@ export async function clientAction({
 
   return {
     userMessage: submission.value.prompt,
-    aiResponse: (
-      <StreamingMessage
-        reader={completion.getReader()}
-      />
-    ),
+    aiResponse: <StreamingMessage reader={completion.getReader()} />,
     lastResult: submission.reply({}),
   };
 }
