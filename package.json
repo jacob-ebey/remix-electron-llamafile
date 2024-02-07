@@ -6,9 +6,8 @@
   "scripts": {
     "build": "remix vite:build",
     "dev": "NODE_ENV=development npx electron ./electron",
-    "dev:server": "./llamafile/llamafile-0.6.2 -m ./llamafile/phi-2.Q4_K_M.llamafile --port 8080 --nobrowser",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
-    "start": "NODE_ENV=production npx electron ./electron",
+    "start": "npx electron ./electron",
     "typecheck": "tsc"
   },
   "overrides": {
@@ -18,10 +17,15 @@
   "dependencies": {
     "@conform-to/react": "^1.0.0",
     "@conform-to/zod": "^1.0.0",
+    "@huggingface/hub": "^0.13.0",
     "@langchain/core": "^0.1.21",
     "@langchain/openai": "^0.0.14",
+    "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-icons": "^1.3.0",
     "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-popover": "^1.0.7",
+    "@radix-ui/react-progress": "^1.0.3",
+    "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-separator": "^1.0.3",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tooltip": "^1.0.7",
@@ -31,6 +35,7 @@
     "chunking-streams": "^0.0.8",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "cmdk": "^0.2.1",
     "express": "^4.18.2",
     "http-server": "^14.1.1",
     "localforage": "^1.10.0",
@@ -40,6 +45,7 @@
     "react-markdown": "^9.0.1",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
+    "vaul": "^0.9.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

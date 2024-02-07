@@ -4,6 +4,7 @@ import {
   Link,
   NavLink,
   Outlet,
+  redirect,
   useLoaderData,
   useParams,
   useNavigation,
@@ -28,7 +29,14 @@ import { listChats } from "./server";
 import { cn } from "@/lib/utils";
 
 export async function clientLoader({}: ClientLoaderFunctionArgs) {
-  const chats = await listChats();
+  const [chats, settings] = await Promise.all([
+    listChats(),
+    window.electronAPI.getSettings(),
+  ]);
+
+  if (!settings.baseLlamafile || !settings.activeLLM) {
+    throw redirect("/setup");
+  }
 
   return { chats };
 }
@@ -111,10 +119,17 @@ export default function Playground() {
 
       <Separator />
 
-      <div className="flex flex-1 overflow-y-hidden">
+      <div className="flex flex-1 overflow-y-hidden relative">
+        {revalidating && (
+          <div className="absolute top-0 left-0 right-0 z-10">
+            <div className="h-1 w-full bg-accent overflow-hidden">
+              <div className="animate-progress w-full h-full bg-primary origin-left-right"></div>
+            </div>
+          </div>
+        )}
         <nav
           className={cn(
-            "flex-col border-r border-border relative min-h-0 overflow-y-auto",
+            "flex-col border-r border-border min-h-0 overflow-y-auto",
             showList ? "w-full md:w-64 flex" : "hidden md:flex w-64"
           )}
         >
@@ -125,28 +140,25 @@ export default function Playground() {
           >
             Skip Navigation
           </a>
-          {revalidating && (
-            <div className="absolute top-0 left-0 right-0 z-10">
-              <div className="h-1 w-full bg-accent overflow-hidden">
-                <div className="animate-progress w-full h-full bg-primary origin-left-right"></div>
-              </div>
-            </div>
+          {!chats.length ? (
+            <p className="px-4 py-2 text-muted-foreground">No chats...</p>
+          ) : (
+            chats.map((chat) => (
+              <NavLink
+                unstable_viewTransition
+                className={({ isActive }) =>
+                  cn("flex flex-col px-4 py-2 border-b border-border", {
+                    "bg-muted text-muted-foreground": isActive,
+                  })
+                }
+                key={chat.id}
+                to={`/chat/${chat.id}`}
+                onClick={closeList}
+              >
+                {chat.label}
+              </NavLink>
+            ))
           )}
-          {chats.map((chat) => (
-            <NavLink
-              unstable_viewTransition
-              className={({ isActive }) =>
-                cn("flex flex-col px-4 py-2 border-b border-border", {
-                  "bg-muted text-muted-foreground": isActive,
-                })
-              }
-              key={chat.id}
-              to={`/chat/${chat.id}`}
-              onClick={closeList}
-            >
-              {chat.label}
-            </NavLink>
-          ))}
         </nav>
         <div
           className="flex flex-1 flex-col overflow-y-hidden"

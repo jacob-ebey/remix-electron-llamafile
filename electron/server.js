@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export async function startServer() {
   const viteDevServer =
-    process.env.NODE_ENV === "production"
+    process.env.NODE_ENV !== "development"
       ? undefined
       : await import("vite").then((vite) =>
           vite.createServer({

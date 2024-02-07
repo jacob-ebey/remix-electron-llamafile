@@ -1,25 +1,112 @@
 import * as cp from "node:child_process";
-import * as fs from "node:fs/promises";
+import * as fs from "node:fs";
+import * as fsp from "node:fs/promises";
 import * as net from "node:net";
+import * as os from "node:os";
 import * as path from "node:path";
+import * as stream from "node:stream";
 import { fileURLToPath } from "node:url";
+
+import * as hf from "@huggingface/hub";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-function getPort() {
-  return new Promise((resolve, reject) => {
-    try {
-      const server = net.createServer((soc) => soc.end());
-      server.listen(0, () => {
-        const port = server.address().port;
-        server.close(() => {
-          resolve(port);
-        });
-      });
-    } catch (error) {
-      reject(error);
-    }
+export async function downloadBaseLlamafile(emitStatus) {
+  const llamafileDir = getLlamafileDirectory();
+  const response = await fetch(
+    "https://github.com/Mozilla-Ocho/llamafile/releases/download/0.6.2/llamafile-0.6.2"
+  );
+  const contentLength = Number(response.headers.get("content-length"));
+
+  let downloaded = 0;
+  emitStatus(0);
+  const writeStream = stream.Readable.fromWeb(response.body)
+    .pipe(
+      new stream.PassThrough({
+        transform(chunk, encoding, callback) {
+          downloaded += chunk.length;
+          emitStatus((downloaded / contentLength) * 100);
+          callback(null, chunk);
+        },
+      })
+    )
+    .pipe(fs.createWriteStream(path.resolve(llamafileDir, "llamafile-0.6.2")));
+  await new Promise((resolve, reject) => {
+    writeStream.on("finish", resolve);
+    writeStream.on("error", reject);
   });
+
+  const settings = await getSettings();
+  settings.baseLlamafile = "llamafile-0.6.2";
+  await writeSettings(settings);
+}
+
+export async function downloadPhi2(emitStatus) {
+  const repo = "jartine/phi-2-llamafile";
+  const file = "phi-2.Q4_K_M.llamafile";
+  const llamafileDir = getLlamafileDirectory();
+
+  const response = await hf.downloadFile({ repo, path: file });
+  const contentLength = Number(response.headers.get("content-length"));
+
+  let downloaded = 0;
+  emitStatus(0);
+  const writeStream = stream.Readable.fromWeb(response.body)
+    .pipe(
+      new stream.PassThrough({
+        transform(chunk, encoding, callback) {
+          downloaded += chunk.length;
+          emitStatus((downloaded / contentLength) * 100);
+          callback(null, chunk);
+        },
+      })
+    )
+    .pipe(
+      fs.createWriteStream(
+        path.resolve(llamafileDir, "phi-2.Q4_K_M.llamafile")
+      ),
+      { end: true }
+    );
+  await new Promise((resolve, reject) => {
+    writeStream.on("finish", resolve);
+    writeStream.on("error", reject);
+  });
+
+  const settings = await getSettings();
+  settings.activeLLM = "phi-2.Q4_K_M.llamafile";
+  await writeSettings(settings);
+}
+
+export async function getSettings() {
+  const settingsPath = path.resolve(getLlamafileDirectory(), "remix-llm.json");
+  try {
+    return JSON.parse(await fsp.readFile(settingsPath, "utf-8")) || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+export async function writeSettings(settings) {
+  const settingsPath = path.resolve(getLlamafileDirectory(), "remix-llm.json");
+  await fsp.writeFile(settingsPath, JSON.stringify(settings, null, 2));
+}
+
+export function getLlamafileDirectory() {
+  let llamafileDir = process.env.LLAMAFILE_PATH;
+  if (llamafileDir) {
+    llamafileDir = path.resolve(llamafileDir);
+  } else {
+    llamafileDir = path.resolve(os.homedir(), ".llamafile");
+  }
+  return llamafileDir;
+}
+
+export async function listLLMs() {
+  const llamafileDir = getLlamafileDirectory();
+  await fsp.mkdir(llamafileDir, { recursive: true });
+
+  const files = await fsp.readdir(llamafileDir);
+  return files.filter((file) => file.endsWith(".llamafile"));
 }
 
 let llmPromise;
@@ -32,14 +119,14 @@ export function ensureLLM() {
 
 async function ensureLLMInternal() {
   console.log("Starting LLM");
-  let executable = "llamafile-0.6.2";
-  let model = "phi-2.Q4_K_M.llamafile";
+  const llamafileDir = getLlamafileDirectory();
+  const settings = await getSettings();
 
-  executable = path.resolve(__dirname, "llamafile", executable);
-  model = path.resolve(__dirname, "llamafile", model);
+  const executable = path.resolve(llamafileDir, settings.baseLlamafile);
+  const model = path.resolve(llamafileDir, settings.activeLLM);
 
   // ensure it's executable
-  await fs.chmod(executable, 0o755);
+  await fsp.chmod(executable, 0o755);
 
   const port = await getPort();
 
@@ -72,4 +159,20 @@ async function ensureLLMInternal() {
   });
 
   return `http://127.0.0.1:${port}/v1`;
+}
+
+function getPort() {
+  return new Promise((resolve, reject) => {
+    try {
+      const server = net.createServer((soc) => soc.end());
+      server.listen(0, () => {
+        const port = server.address().port;
+        server.close(() => {
+          resolve(port);
+        });
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
 }

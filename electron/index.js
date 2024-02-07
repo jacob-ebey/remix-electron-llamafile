@@ -1,9 +1,18 @@
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import * as os from "node:os";
 
 import { app, BrowserWindow, ipcMain } from "electron/main";
 
-import { ensureLLM } from "./ipc.js";
+import {
+  downloadBaseLlamafile,
+  downloadPhi2,
+  ensureLLM,
+  getLlamafileDirectory,
+  getSettings,
+  listLLMs,
+  writeSettings,
+} from "./ipc.js";
 import { startServer } from "./server.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -18,11 +27,30 @@ async function createWindow() {
     },
   });
 
+  if (process.env.NODE_ENV === "development") {
+    win.webContents.openDevTools();
+  }
+
   win.loadURL(await startServerPromise);
 }
 
 app.whenReady().then(async () => {
+  app.setPath("userData", path.resolve(os.homedir(), ".remix-llm"));
+  ipcMain.handle("download-base-llamafile", (event) =>
+    downloadBaseLlamafile((progress) => {
+      event.sender.send("download-base-llamafile-progress", progress);
+    })
+  );
+  ipcMain.handle("download-phi2", (event) =>
+    downloadPhi2((progress) => {
+      event.sender.send("download-phi2-progress", progress);
+    })
+  );
   ipcMain.handle("ensure-llm", ensureLLM);
+  ipcMain.handle("get-llamafile-directory", getLlamafileDirectory);
+  ipcMain.handle("get-settings", getSettings);
+  ipcMain.handle("list-llms", listLLMs);
+  ipcMain.handle("write-settings", (_, settings) => writeSettings(settings));
 
   await createWindow();
 

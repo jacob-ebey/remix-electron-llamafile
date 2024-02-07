@@ -4,7 +4,9 @@
     "dev-server.js",
     "vite.config.ts",
     "electron/index.js",
-    "electron/preload.js"
+    "electron/ipc.js",
+    "electron/preload.cjs",
+    "electron/server.js"
   ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
