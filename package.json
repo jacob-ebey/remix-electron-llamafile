@@ -3,13 +3,15 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "main": "./index.js",
+  "main": "electron/index.js",
   "scripts": {
     "build": "remix vite:build",
     "dev": "DEV=1 npx electron ./electron",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
-    "start": "npx electron ./electron",
-    "typecheck": "tsc"
+    "start": "electron-forge start",
+    "typecheck": "tsc",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
   },
   "overrides": {
     "react": "0.0.0-experimental-4b2a1115a-20240202",
@@ -37,6 +39,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cmdk": "^0.2.1",
+    "electron-squirrel-startup": "^1.0.0",
     "express": "^4.18.2",
     "http-server": "^14.1.1",
     "localforage": "^1.10.0",
@@ -50,6 +53,12 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@electron-forge/cli": "^7.2.0",
+    "@electron-forge/maker-deb": "^7.2.0",
+    "@electron-forge/maker-rpm": "^7.2.0",
+    "@electron-forge/maker-squirrel": "^7.2.0",
+    "@electron-forge/maker-zip": "^7.2.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.2.0",
     "@remix-run/dev": "^2.6.0",
     "@types/react": "^18.2.20",
     "@types/react-dom": "^18.2.7",

@@ -2,6 +2,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { app, BrowserWindow, ipcMain } from "electron/main";
+import squirrelStartup from "electron-squirrel-startup";
 
 import {
   downloadBaseLlamafile,
@@ -13,6 +14,10 @@ import {
   writeSettings,
 } from "./ipc.js";
 import { startServer } from "./server.js";
+
+if (squirrelStartup) {
+  app.quit();
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
