@@ -8,14 +8,13 @@ import { createRequestHandler } from "@remix-run/express";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export async function startServer() {
-  const viteDevServer =
-    process.env.NODE_ENV !== "development"
-      ? undefined
-      : await import("vite").then((vite) =>
-          vite.createServer({
-            server: { middlewareMode: true },
-          })
-        );
+  const viteDevServer = !process.env.DEV
+    ? undefined
+    : await import("vite").then((vite) =>
+        vite.createServer({
+          server: { middlewareMode: true },
+        })
+      );
 
   const remixHandler = createRequestHandler({
     build: viteDevServer

@@ -1,6 +1,5 @@
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import * as os from "node:os";
 
 import { app, BrowserWindow, ipcMain } from "electron/main";
 
@@ -27,7 +26,7 @@ async function createWindow() {
     },
   });
 
-  if (process.env.NODE_ENV === "development") {
+  if (!!process.env.DEV) {
     win.webContents.openDevTools();
   }
 
@@ -35,7 +34,6 @@ async function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  app.setPath("userData", path.resolve(os.homedir(), ".remix-llm"));
   ipcMain.handle("download-base-llamafile", (event) =>
     downloadBaseLlamafile((progress) => {
       event.sender.send("download-base-llamafile-progress", progress);

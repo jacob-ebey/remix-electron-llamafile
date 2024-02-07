@@ -3,9 +3,10 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "main": "./index.js",
   "scripts": {
     "build": "remix vite:build",
-    "dev": "NODE_ENV=development npx electron ./electron",
+    "dev": "DEV=1 npx electron ./electron",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "npx electron ./electron",
     "typecheck": "tsc"

@@ -1,11 +1,13 @@
 import {
   type MetaFunction,
-  ClientLoaderFunctionArgs,
+  type ClientActionFunctionArgs,
+  type ClientLoaderFunctionArgs,
   useLoaderData,
   useFetcher,
-  ClientActionFunctionArgs,
 } from "@remix-run/react";
+import { ReloadIcon } from "@radix-ui/react-icons";
 
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -63,7 +65,7 @@ export async function clientAction({ request }: ClientActionFunctionArgs) {
 export default function Index() {
   const { activeLLM, llamafileDirectory, llms } =
     useLoaderData<typeof clientLoader>();
-  const fetcher = useFetcher();
+  const selectModelFetcher = useFetcher();
 
   return (
     <div className="container py-4 space-y-4">
@@ -75,27 +77,35 @@ export default function Index() {
           <CardDescription>The LLM that is currently active.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Select
-            onValueChange={(value) => {
-              const formData = new FormData();
-              formData.append("intent", "select-model");
-              formData.append("model", value);
-              fetcher.submit(formData, { method: "POST" });
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={activeLLM || "Select a LLM"} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {llms.map((llm) => (
-                  <SelectItem key={llm} value={llm}>
-                    {llm}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select
+              value={activeLLM}
+              disabled={!llms.length}
+              onValueChange={(value) => {
+                const formData = new FormData();
+                formData.append("intent", "select-model");
+                formData.append("model", value);
+                selectModelFetcher.submit(formData, { method: "POST" });
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select a LLM" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {llms.map((llm) => (
+                    <SelectItem key={llm} value={llm}>
+                      {llm}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Button size="icon" variant="outline">
+              <span className="sr-only">refresh LLMs</span>
+              <ReloadIcon />
+            </Button>
+          </div>
         </CardContent>
         <CardFooter className="text-sm text-muted-foreground">
           Add llamafiles to the directory below to see them here.

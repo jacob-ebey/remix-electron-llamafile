@@ -5,11 +5,8 @@ import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
 import * as stream from "node:stream";
-import { fileURLToPath } from "node:url";
 
 import * as hf from "@huggingface/hub";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export async function downloadBaseLlamafile(emitStatus) {
   const llamafileDir = getLlamafileDirectory();
@@ -77,17 +74,39 @@ export async function downloadPhi2(emitStatus) {
   await writeSettings(settings);
 }
 
+function getSettingsPath() {
+  return path.resolve(os.homedir(), ".remix-llm", "remix-llm.json");
+}
+
 export async function getSettings() {
-  const settingsPath = path.resolve(getLlamafileDirectory(), "remix-llm.json");
+  const settingsPath = getSettingsPath();
+  const llamafileDir = getLlamafileDirectory();
+
   try {
-    return JSON.parse(await fsp.readFile(settingsPath, "utf-8")) || {};
+    const settings =
+      JSON.parse(await fsp.readFile(settingsPath, "utf-8")) || {};
+    if (
+      settings.activeLLM &&
+      !fs.existsSync(path.resolve(llamafileDir, settings.activeLLM))
+    ) {
+      settings.activeLLM = undefined;
+    }
+    if (
+      settings.baseLlamafile &&
+      !fs.existsSync(path.resolve(llamafileDir, settings.baseLlamafile))
+    ) {
+      settings.baseLlamafile = undefined;
+    }
+
+    return settings;
   } catch (error) {
     return {};
   }
 }
 
 export async function writeSettings(settings) {
-  const settingsPath = path.resolve(getLlamafileDirectory(), "remix-llm.json");
+  const settingsPath = getSettingsPath();
+  await fsp.mkdir(path.dirname(settingsPath), { recursive: true });
   await fsp.writeFile(settingsPath, JSON.stringify(settings, null, 2));
 }
 
