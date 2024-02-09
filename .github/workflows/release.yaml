@@ -1,0 +1,29 @@
+name: Build/release
+on: push
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Dependencies
+        run: npm ci
+      - name: Electron Rebuild Dependencies
+        run: npm run rebuild
+      - name: Build
+        run: npm run build
+      - name: Package
+        run: npm run package
+      - name: Make
+        run: npm run make
+      - name: Publish app
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: npm run publish

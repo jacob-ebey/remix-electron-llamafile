@@ -7,6 +7,7 @@
   "main": "electron/index.js",
   "scripts": {
     "postinstall": "patch-package",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
     "build": "remix vite:build",
     "dev": "DEV=1 npx electron ./electron",
     "generate:migration": "pnpm drizzle-kit generate:sqlite",
@@ -15,7 +16,7 @@
     "typecheck": "tsc",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "rebuild": "electron-rebuild -f -w better-sqlite3"
+    "publish": "electron-forge publish"
   },
   "overrides": {
     "react": "0.0.0-experimental-4b2a1115a-20240202",
