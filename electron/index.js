@@ -73,6 +73,7 @@ app.whenReady().then(async () => {
 
   async function createWindow() {
     win = new BrowserWindow({
+      icon: "./public/favicon.png",
       width: 800,
       height: 600,
       webPreferences: {
@@ -96,6 +97,21 @@ app.whenReady().then(async () => {
       (request.method === "GET" || request.method === "HEAD")
     ) {
       if (viteDevServer) {
+        const staticFile = path.resolve(__dirname, "../public" + url.pathname);
+        if (
+          await fsp
+            .stat(staticFile)
+            .then((s) => s.isFile())
+            .catch(() => false)
+        ) {
+          return new Response(await fsp.readFile(staticFile), {
+            headers: {
+              "content-type":
+                mime.lookup(path.basename(staticFile)) || "text/plain",
+            },
+          });
+        }
+
         if (request.method === "HEAD") {
           return new Response(null, {
             headers: {
@@ -121,7 +137,8 @@ app.whenReady().then(async () => {
           if (transformed) {
             return new Response(transformed.code, {
               headers: {
-                "content-type": "application/javascript",
+                "content-type":
+                  mime.lookup(path.basename(id)) || "application/javascript",
               },
             });
           }
@@ -138,11 +155,10 @@ app.whenReady().then(async () => {
         try {
           const isFile = await fsp.stat(file).then((s) => s.isFile());
           if (isFile) {
-            return new Response(await fsp.readFile(file, "utf-8"), {
+            return new Response(await fsp.readFile(file), {
               headers: {
-                "content-type": `${
-                  mime.lookup(path.basename(file)) || "text/plain"
-                }; charset=utf-8`,
+                "content-type":
+                  mime.lookup(path.basename(file)) || "text/plain",
               },
             });
           }

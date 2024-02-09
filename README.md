@@ -1,20 +1,24 @@
-# templates/spa
+# remix-electron-llamafile
 
-This template leverages [Remix SPA Mode](https://remix.run/docs/en/main/future/spa-mode) to build your app as a Single-Page Application using [Client Data](https://remix.run/docs/en/main/guides/client-data) for all of you data loads and mutations.
+<img src="./public/favicon.png" width="200" />
 
-⚠️ This is built on top of the Remix Vite template. Remix support for Vite is currently unstable and not recommended for production.
-
-📖 See the [Remix Vite docs][remix-vite-docs] for details on supported features.
+This is a template for creating a Remix + Llamafile + Electron app.
 
 ## Setup
 
 ```shellscript
-npx create-remix@latest --template remix-run/remix/templates/spa
+npx create-remix@latest --template jacob-ebey/remix-electron-llamafile
 ```
 
 ## Development
 
-You can develop your SPA app just like you would a normal Remix app, via:
+Install dependencies and rebuild the native modules for Electron:
+
+```shellscript
+npm install && npm run rebuild
+```
+
+You can develop your app just like you would a normal Remix app, via:
 
 ```shellscript
 npm run dev
@@ -22,16 +26,22 @@ npm run dev
 
 ## Production
 
-When you are ready yo build a production version of your app, `npm run build` will generate your assets and an `index.html` for the SPA.
+When you are ready to build a production version of your app:
 
 ```shellscript
 npm run build
 ```
 
-You can serve this from any server of your choosing, for a simple example, you could use [http-server](https://www.npmjs.com/package/http-server):
+will generate your production assets.
 
 ```shellscript
-npx http-server build/client/
+npm run package
 ```
 
-[remix-vite-docs]: https://remix.run/docs/en/main/future/vite
+will package your app into a distributable format.
+
+```shellscript
+npm run make
+```
+
+will create an installer for your app.

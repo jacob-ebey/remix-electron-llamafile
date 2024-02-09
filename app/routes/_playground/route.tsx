@@ -86,7 +86,8 @@ export default function Playground() {
               <ExitIcon aria-hidden="true" />
             </Button>
           ) : null}
-          <h2 className="text-lg font-semibold">Remix LLM</h2>
+          <img src="/favicon.png" alt="Remix LLM" className="w-8 h-8" />
+          {/* <h2 className="text-lg font-semibold">Remix LLM</h2> */}
         </div>
         <div className="flex flex-1 items-center gap-4 relative">
           <DownloadProgress />

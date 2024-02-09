@@ -2,6 +2,7 @@ export default {
   packagerConfig: {
     asar: true,
     extraFiles: ["./drizzle"],
+    icon: "./public/favicon",
   },
   rebuildConfig: {},
   makers: [
@@ -15,7 +16,11 @@ export default {
     },
     {
       name: "@electron-forge/maker-deb",
-      config: {},
+      config: {
+        options: {
+          icon: "./public/favicon.png",
+        },
+      },
     },
     {
       name: "@electron-forge/maker-rpm",
