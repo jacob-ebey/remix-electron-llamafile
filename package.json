@@ -1,6 +1,7 @@
 {
   "name": "remix-electron-llamafile",
   "version": "0.0.1",
+  "description": "Chat with LLMs locally utilizing llamafile as the underlying model executor.",
   "private": true,
   "sideEffects": false,
   "type": "module",
