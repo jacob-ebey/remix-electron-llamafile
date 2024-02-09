@@ -32,5 +32,6 @@ jobs:
         run: npm run publish
       - uses: actions/upload-artifact@v4
         with:
-          name: ancient-warriors-launcher-v${{needs.check-version.outputs.VERSION}}
+          name: remix-electron-llamafile-${{ matrix.os }}-v${{needs.check-version.outputs.VERSION}}
           path: out/make
+          overwrite: true
