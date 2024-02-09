@@ -1,5 +1,15 @@
 name: Build/release
-on: push
+on:
+  push:
+    branches:
+      - main
+  release:
+    types:
+      - created
+
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ${{ matrix.os }}
@@ -23,3 +33,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run publish
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ancient-warriors-launcher-v${{needs.check-version.outputs.VERSION}}
+          path: out/make
