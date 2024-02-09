@@ -1,61 +1,74 @@
-import * as React from "react";
 import {
-  type ClientLoaderFunctionArgs,
+  ExitIcon,
+  GearIcon,
+  HamburgerMenuIcon,
+  PlusIcon,
+} from "@radix-ui/react-icons";
+import {
   Link,
   NavLink,
   Outlet,
   redirect,
   useLoaderData,
-  useParams,
-  useNavigation,
   useLocation,
+  useNavigation,
+  useParams,
 } from "@remix-run/react";
-import {
-  GearIcon,
-  HamburgerMenuIcon,
-  PlusIcon,
-  ExitIcon,
-} from "@radix-ui/react-icons";
+import * as React from "react";
+import { serverOnly$ } from "vite-env-only";
 
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
-import { listChats } from "./server";
+import { listChats } from "@/data.server/chat";
+import { getSettings } from "@/data.server/settings";
 import { cn } from "@/lib/utils";
+import { flushSync } from "react-dom";
 
-export async function clientLoader({}: ClientLoaderFunctionArgs) {
-  const [chats, settings] = await Promise.all([
-    listChats(),
-    window.electronAPI.getSettings(),
-  ]);
+export const loader = serverOnly$(async () => {
+  const [chats, settings] = await Promise.all([listChats(), getSettings()]);
 
   if (!settings.baseLlamafile || !settings.activeLLM) {
     throw redirect("/setup");
   }
 
   return { chats };
+});
+
+function setViewTransitionState(updater: () => void) {
+  return () => {
+    if (typeof document.startViewTransition === "function") {
+      document.startViewTransition(() => {
+        flushSync(updater);
+      });
+    } else {
+      updater();
+    }
+  };
 }
 
 export default function Playground() {
-  const { chats } = useLoaderData<typeof clientLoader>();
+  const { chats } = useLoaderData<typeof loader>();
   const location = useLocation();
   const navigation = useNavigation();
   const { chatId } = useParams();
-  const revalidating = navigation.state === "loading";
+  const revalidating = navigation.state !== "idle";
 
   const [explicitelyShowList, setExplicitelyShowList] = React.useState(false);
   const showList = explicitelyShowList || location.pathname === "/";
 
-  const closeList = () => setExplicitelyShowList(false);
+  const closeList = setViewTransitionState(() => setExplicitelyShowList(false));
+  const openList = setViewTransitionState(() => setExplicitelyShowList(true));
 
   return (
     <div className="h-full flex flex-col">
-      <header className="container flex justify-between py-4 items-center">
+      <header className="container flex justify-between py-4 items-center gap-4">
         <div className="flex items-center gap-4">
           {!showList ? (
             <Button asChild size="icon" variant="outline" className="md:hidden">
@@ -63,7 +76,7 @@ export default function Playground() {
                 to="/"
                 onClick={(event) => {
                   event.preventDefault();
-                  setExplicitelyShowList(true);
+                  openList();
                 }}
               >
                 <span className="sr-only">show list of chats</span>
@@ -76,7 +89,7 @@ export default function Playground() {
               variant="outline"
               className="md:hidden"
               onClick={() => {
-                setExplicitelyShowList(false);
+                closeList();
               }}
             >
               <span className="sr-only">return to chat</span>
@@ -85,12 +98,15 @@ export default function Playground() {
           ) : null}
           <h2 className="text-lg font-semibold">Remix LLM</h2>
         </div>
+        <div className="flex flex-1 items-center gap-4 relative">
+          <DownloadProgress />
+        </div>
         <div className="flex gap-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button asChild size="icon" variant="outline">
-                  <Link to="/chat" onClick={closeList}>
+                  <Link unstable_viewTransition to="/chat" onClick={closeList}>
                     <span className="sr-only">New Chat</span>
                     <PlusIcon />
                   </Link>
@@ -100,10 +116,15 @@ export default function Playground() {
                 <p>New Chat</p>
               </TooltipContent>
             </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button asChild size="icon" variant="outline">
-                  <Link to="/settings" onClick={closeList}>
+                  <Link
+                    unstable_viewTransition
+                    to="/settings"
+                    onClick={closeList}
+                  >
                     <span className="sr-only">Settings</span>
                     <GearIcon />
                   </Link>
@@ -140,7 +161,7 @@ export default function Playground() {
           >
             Skip Navigation
           </a>
-          {!chats.length ? (
+          {!chats?.length ? (
             <p className="px-4 py-2 text-muted-foreground">No chats...</p>
           ) : (
             chats.map((chat) => (
@@ -155,7 +176,7 @@ export default function Playground() {
                 to={`/chat/${chat.id}`}
                 onClick={closeList}
               >
-                {chat.label}
+                {chat.title}
               </NavLink>
             ))
           )}
@@ -169,4 +190,40 @@ export default function Playground() {
       </div>
     </div>
   );
+}
+
+function DownloadProgress() {
+  const [downloadLlamafileProgress, setDownloadLlamafileProgress] =
+    React.useState(0);
+  React.useEffect(
+    () =>
+      window.electronAPI.onDownloadBaseLlamafileProgress((progress) => {
+        setDownloadLlamafileProgress(progress);
+      }),
+    []
+  );
+  const [downloadPhi2Progress, setDownloadPhi2Progress] = React.useState(0);
+  React.useEffect(
+    () =>
+      window.electronAPI.onDownloadPhi2Progress((progress) => {
+        setDownloadPhi2Progress(progress);
+      }),
+    []
+  );
+
+  return downloadLlamafileProgress > 0 && downloadLlamafileProgress < 100 ? (
+    <>
+      <Progress value={downloadLlamafileProgress} className="flex-1 w-1/2" />
+      <span className="text-sm text-muted-foreground w-1/2 overflow-hidden overflow-ellipsis whitespace-nowrap">
+        downloading llamafile executable
+      </span>
+    </>
+  ) : downloadPhi2Progress > 0 && downloadPhi2Progress < 100 ? (
+    <>
+      <Progress value={downloadPhi2Progress} className="flex-1 w-1/2" />
+      <span className="text-sm text-muted-foreground w-1/2 overflow-hidden overflow-ellipsis whitespace-nowrap">
+        downloading phi-2 model
+      </span>
+    </>
+  ) : null;
 }

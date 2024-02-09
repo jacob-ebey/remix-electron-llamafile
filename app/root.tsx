@@ -25,5 +25,3 @@ export default function App() {
     </html>
   );
 }
-
-export { App as HydrateFallback };

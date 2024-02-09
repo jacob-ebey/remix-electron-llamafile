@@ -1,6 +1,6 @@
 export default {
   packagerConfig: {
-    asar: true,
+    extraFiles: ["./drizzle"],
   },
   rebuildConfig: {},
   makers: [
@@ -18,12 +18,6 @@ export default {
     },
     {
       name: "@electron-forge/maker-rpm",
-      config: {},
-    },
-  ],
-  plugins: [
-    {
-      name: "@electron-forge/plugin-auto-unpack-natives",
       config: {},
     },
   ],

@@ -1,39 +1,12 @@
 {
-  "include": [
-    "app/**/*",
-    "dev-server.js",
-    "vite.config.ts",
-    "electron/index.js",
-    "electron/ipc.js",
-    "electron/preload.cjs",
-    "electron/server.js"
-  ],
-  "compilerOptions": {
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": [
-      "@remix-run/node",
-      "node",
-      "react/experimental",
-      "react-dom/experimental",
-      "vite/client"
-    ],
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "jsx": "react-jsx",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "resolveJsonModule": true,
-    "target": "ES2022",
-    "strict": true,
-    "allowJs": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./app/*"]
+  "extends": "./tsconfig.base.json",
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
     },
-
-    // Remix takes care of building everything in `remix build`.
-    "noEmit": true
-  }
+    {
+      "path": "./tsconfig.electron.json"
+    }
+  ]
 }

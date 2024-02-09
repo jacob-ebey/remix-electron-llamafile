@@ -1,0 +1,27 @@
+{
+  "version": "5",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1707334097345,
+      "tag": "0000_clammy_leper_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1707431378123,
+      "tag": "0001_silky_black_crow",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1707431733113,
+      "tag": "0002_amusing_snowbird",
+      "breakpoints": true
+    }
+  ]
+}

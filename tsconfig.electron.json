@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": ["electron/**/*", "shared-api.d.ts"],
+  "exclude": ["build"],
+  "compilerOptions": {
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "composite": true,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "types": ["node"]
+  }
+}

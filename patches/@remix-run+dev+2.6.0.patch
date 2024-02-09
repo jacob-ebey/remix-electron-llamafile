@@ -1,0 +1,43 @@
+diff --git a/node_modules/@remix-run/dev/dist/vite/plugin.js b/node_modules/@remix-run/dev/dist/vite/plugin.js
+index 70f9611..421d443 100644
+--- a/node_modules/@remix-run/dev/dist/vite/plugin.js
++++ b/node_modules/@remix-run/dev/dist/vite/plugin.js
+@@ -683,22 +683,22 @@ const remixVitePlugin = (remixUserConfig = {}) => {
+       return () => {
+         // Let user servers handle SSR requests in middleware mode,
+         // otherwise the Vite plugin will handle the request
+-        if (!viteDevServer.config.server.middlewareMode) {
+-          viteDevServer.middlewares.use(async (req, res, next) => {
+-            try {
+-              let build = await viteDevServer.ssrLoadModule(serverBuildId);
+-              let handler = serverRuntime.createRequestHandler(build, "development");
+-              let nodeHandler = async (nodeReq, nodeRes) => {
+-                let req = nodeAdapter.fromNodeRequest(nodeReq);
+-                let res = await handler(req, remixDevLoadContext);
+-                await nodeAdapter.toNodeRequest(res, nodeRes);
+-              };
+-              await nodeHandler(req, res);
+-            } catch (error) {
+-              next(error);
+-            }
+-          });
+-        }
++        // if (!viteDevServer.config.server.middlewareMode) {
++        //   viteDevServer.middlewares.use(async (req, res, next) => {
++        //     try {
++        //       let build = await viteDevServer.ssrLoadModule(serverBuildId);
++        //       let handler = serverRuntime.createRequestHandler(build, "development");
++        //       let nodeHandler = async (nodeReq, nodeRes) => {
++        //         let req = nodeAdapter.fromNodeRequest(nodeReq);
++        //         let res = await handler(req, remixDevLoadContext);
++        //         await nodeAdapter.toNodeRequest(res, nodeRes);
++        //       };
++        //       await nodeHandler(req, res);
++        //     } catch (error) {
++        //       next(error);
++        //     }
++        //   });
++        // }
+       };
+     },
+     writeBundle: {

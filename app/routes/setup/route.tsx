@@ -1,11 +1,13 @@
 import * as React from "react";
 import {
-  type ClientActionFunctionArgs,
+  type MetaFunction,
   useFetcher,
   useLoaderData,
   redirect,
 } from "@remix-run/react";
+import { type ActionFunctionArgs } from "@remix-run/node";
 import { ReloadIcon } from "@radix-ui/react-icons";
+import { serverOnly$ } from "vite-env-only";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,17 +28,32 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import {
+  downloadBaseLlamafile,
+  downloadPhi2,
+  getLlamafileDirectory,
+  getLLMs,
+  getSettings,
+  writeSettings,
+} from "@/data.server/settings";
 
-export async function clientLoader() {
-  const { activeLLM, baseLlamafile } = await window.electronAPI.getSettings();
+export const meta: MetaFunction = () => {
+  return [
+    { title: "Remix LLM" },
+    { name: "description", content: "Welcome to Remix LLM!" },
+  ];
+};
+
+export const loader = serverOnly$(async () => {
+  const { activeLLM, baseLlamafile } = await getSettings();
 
   if (activeLLM && baseLlamafile) {
     throw redirect("/");
   }
 
   const [llms, llamafileDirectory] = await Promise.all([
-    window.electronAPI.listLLMs(),
-    window.electronAPI.getLlamafileDirectory(),
+    getLLMs(),
+    getLlamafileDirectory(),
   ]);
 
   return {
@@ -45,32 +62,38 @@ export async function clientLoader() {
     llamafileDirectory,
     llms,
   };
-}
+});
 
-export async function clientAction({ request }: ClientActionFunctionArgs) {
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-  switch (intent) {
-    case "download-base-llamafile":
-      await window.electronAPI.downloadBaseLlamafile();
-      return true;
-    case "download-base-model":
-      await window.electronAPI.downloadPhi2();
-      return true;
-    case "select-model":
-      const model = String(formData.get("model"));
-      const settings = await window.electronAPI.getSettings();
-      settings.activeLLM = model;
-      await window.electronAPI.writeSettings(settings);
-      return true;
-    default:
-      throw new Error("Invalid intent");
+export const action = serverOnly$(
+  async ({ context, request }: ActionFunctionArgs) => {
+    const formData = await request.formData();
+    const intent = formData.get("intent");
+    switch (intent) {
+      case "download-base-llamafile":
+        await downloadBaseLlamafile((progress) =>
+          context.ipcEvent("download-base-llamafile-progress", progress)
+        );
+        return true;
+      case "download-base-model":
+        await downloadPhi2((progress) =>
+          context.ipcEvent("download-phi2-progress", progress)
+        );
+        return true;
+      case "select-model":
+        const model = String(formData.get("model"));
+        const settings = await getSettings();
+        settings.activeLLM = model;
+        await writeSettings(settings);
+        return true;
+      default:
+        throw new Error("Invalid intent");
+    }
   }
-}
+);
 
 export default function Setup() {
   const { activeLLM, baseLlamafile, llamafileDirectory, llms } =
-    useLoaderData<typeof clientLoader>();
+    useLoaderData<typeof loader>();
   const downloadLlamafileFetcher = useFetcher();
   const selectModelFetcher = useFetcher();
 

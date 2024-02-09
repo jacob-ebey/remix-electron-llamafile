@@ -3,23 +3,27 @@ import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 
 declare global {
+  interface MockRequest {
+    body?: ArrayBuffer;
+    headers: Record<string, string[]>;
+    method: string;
+    url: string;
+  }
+
+  type MockResponse = { rethrow?: boolean } & (
+    | {
+        response: {
+          body: ArrayBuffer;
+          headers: Record<string, string[]>;
+          status: number;
+          statusText?: string;
+        };
+      }
+    | { data: unknown }
+  );
+
   interface Window {
-    electronAPI: {
-      downloadBaseLlamafile(): Promise<void>;
-      onDownloadBaseLlamafileProgress(
-        callback: (progress: number) => void
-      ): () => void;
-      downloadPhi2(): Promise<void>;
-      onDownloadPhi2Progress(callback: (progress: number) => void): () => void;
-      ensureLLM(): Promise<string>;
-      getLlamafileDirectory(): Promise<string>;
-      getSettings(): Promise<{ baseLlamafile?: string; activeLLM?: string }>;
-      listLLMs(): Promise<string[]>;
-      writeSettings(settings: {
-        baseLlamafile?: string;
-        activeLLM?: string;
-      }): Promise<void>;
-    };
+    electronAPI: EventsBridge;
   }
 }
 

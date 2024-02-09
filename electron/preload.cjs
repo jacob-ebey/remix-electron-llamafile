@@ -1,23 +1,40 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-contextBridge.exposeInMainWorld("electronAPI", {
-  downloadBaseLlamafile: () => ipcRenderer.invoke("download-base-llamafile"),
+/** @type {EventsBridge} */
+const eventsBridge = {
+  onMessage: (listener) => {
+    /**
+     *
+     * @param {Electron.IpcRendererEvent} _
+     * @param {{
+     *  id: string;
+     *  value: string;
+     * }} data
+     */
+    const handler = (_, data) => listener(data);
+    ipcRenderer.on("message-update", handler);
+    return () => ipcRenderer.off("message-update", handler);
+  },
   onDownloadBaseLlamafileProgress: (listener) => {
-    ipcRenderer.on("download-base-llamafile-progress", (_, progress) =>
-      listener(progress)
-    );
-    return () => ipcRenderer.off("download-phi2-progress", listener);
+    /**
+     *
+     * @param {Electron.IpcRendererEvent} _
+     * @param {number} data
+     */
+    const handler = (_, data) => listener(data);
+    ipcRenderer.on("download-base-llamafile-progress", handler);
+    return () => ipcRenderer.off("download-base-llamafile-progress", handler);
   },
-  downloadPhi2: () => ipcRenderer.invoke("download-phi2"),
   onDownloadPhi2Progress: (listener) => {
-    ipcRenderer.on("download-phi2-progress", (_, progress) =>
-      listener(progress)
-    );
-    return () => ipcRenderer.off("download-phi2-progress", listener);
+    /**
+     *
+     * @param {Electron.IpcRendererEvent} _
+     * @param {number} data
+     */
+    const handler = (_, data) => listener(data);
+    ipcRenderer.on("download-phi2-progress", handler);
+    return () => ipcRenderer.off("download-phi2-progress", handler);
   },
-  ensureLLM: () => ipcRenderer.invoke("ensure-llm"),
-  getLlamafileDirectory: () => ipcRenderer.invoke("get-llamafile-directory"),
-  getSettings: () => ipcRenderer.invoke("get-settings"),
-  listLLMs: () => ipcRenderer.invoke("list-llms"),
-  writeSettings: (settings) => ipcRenderer.invoke("write-settings", settings),
-});
+};
+
+contextBridge.exposeInMainWorld("electronAPI", eventsBridge);
