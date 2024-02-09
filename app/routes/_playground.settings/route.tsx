@@ -36,8 +36,10 @@ import {
   getSettings,
   writeSettings,
 } from "@/data.server/settings";
-import { cn, debounce } from "@/lib/utils";
+import { debounce } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
+
+import { recompileLlamafile } from "./server";
 
 export const meta: MetaFunction = () => {
   return [
@@ -97,6 +99,7 @@ export const action = serverOnly$(async ({ request }: ActionFunctionArgs) => {
       const settings = await getSettings();
       settings.gpu = gpu;
       await writeSettings(settings);
+      await recompileLlamafile();
       return { success: true };
     }
     case "set-n-gpu-layers": {
@@ -275,28 +278,36 @@ export default function Index() {
           <CardDescription>Dragons ahead.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Select
-            value={gpu}
-            onValueChange={(value) => {
-              const formData = new FormData();
-              formData.append("intent", "set-gpu");
-              formData.append("gpu", value);
-              selectGPUFetcher.submit(formData, { method: "POST" });
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select a GPU" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value="AUTO">AUTO</SelectItem>
-                <SelectItem value="APPLE">APPLE</SelectItem>
-                <SelectItem value="AMD">AMD</SelectItem>
-                <SelectItem value="NVIDIA">NVIDIA</SelectItem>
-                <SelectItem value="DISABLE">DISABLE</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select
+              value={gpu}
+              onValueChange={(value) => {
+                const formData = new FormData();
+                formData.append("intent", "set-gpu");
+                formData.append("gpu", value);
+                selectGPUFetcher.submit(formData, { method: "POST" });
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select a GPU" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="AUTO">AUTO</SelectItem>
+                  <SelectItem value="APPLE">APPLE</SelectItem>
+                  <SelectItem value="AMD">AMD</SelectItem>
+                  <SelectItem value="NVIDIA">NVIDIA</SelectItem>
+                  <SelectItem value="DISABLE">DISABLE</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            {selectGPUFetcher.state !== "idle" && (
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
+              </span>
+            )}
+          </div>
 
           <div>
             <Label htmlFor="n-gpu-layers" className="mb-2 block">

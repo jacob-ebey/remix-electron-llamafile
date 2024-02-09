@@ -25,9 +25,40 @@ export class LlamafileModel extends SimpleChatModel {
   constructor(private params: LlamafileModelParams) {
     super(params);
   }
+
   _llmType(): string {
     return "llamafile";
   }
+
+  async recompile(signal?: AbortSignal) {
+    const args: string[] = [];
+    if (this.params.modelPath) args.push("-m", this.params.modelPath);
+
+    const llamafileProcess = execa(
+      this.params.executablePath,
+      [...args, "--cli", "--recompile"],
+      {
+        shell: true,
+        signal: signal,
+        stdout: "pipe",
+        stderr: "pipe",
+        stdin: "pipe",
+        stripFinalNewline: true,
+      }
+    );
+
+    await new Promise<void>((resolve, reject) => {
+      llamafileProcess.once("exit", (code) => {
+        console.log(`Llamafile process recompile exited with code ${code}`);
+        if (code === 0) resolve();
+        else
+          reject(
+            new Error(`Llamafile process recompile exited with code ${code}`)
+          );
+      });
+    });
+  }
+
   async *_streamResponseChunks(
     _messages: BaseMessage[],
     _options: this["ParsedCallOptions"],

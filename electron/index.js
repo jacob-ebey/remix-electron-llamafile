@@ -138,13 +138,12 @@ app.whenReady().then(async () => {
           if (transformed) {
             return new Response(transformed.code, {
               headers: {
-                "content-type":
-                  mime.lookup(path.basename(id)) || "application/javascript",
+                "content-type": "application/javascript",
               },
             });
           }
         } catch (error) {
-          // console.error(error);
+          console.error(error);
         }
       } else {
         const file = path.resolve(
