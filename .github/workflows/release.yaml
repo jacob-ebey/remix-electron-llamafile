@@ -19,11 +19,7 @@ jobs:
         run: npm run rebuild
       - name: Build
         run: npm run build
-      - name: Package
-        run: npm run package
-      - name: Make
-        run: npm run make
       - name: Publish app
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run publish
