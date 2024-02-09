@@ -142,9 +142,7 @@ app.whenReady().then(async () => {
               },
             });
           }
-        } catch (error) {
-          console.error(error);
-        }
+        } catch (error) {}
       } else {
         const file = path.resolve(
           __dirname,
