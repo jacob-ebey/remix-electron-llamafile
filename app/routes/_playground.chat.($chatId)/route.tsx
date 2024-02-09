@@ -279,8 +279,9 @@ export default function Index() {
         <input type="hidden" name="intent" value="send-message" />
         <Textarea
           {...getTextareaProps(sendMessageFields.prompt)}
+          key={chatId || sendMessageFields.prompt.key}
+          autoFocus
           disabled={isDownloadingStuff}
-          key={sendMessageFields.prompt.key}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();

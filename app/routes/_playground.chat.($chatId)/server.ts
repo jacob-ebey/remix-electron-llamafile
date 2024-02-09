@@ -52,9 +52,11 @@ export async function streamChatCompletion(
   const chatModel = new LlamafileModel({
     executablePath: path.resolve(llamafileDir, settings.baseLlamafile),
     modelPath: path.resolve(llamafileDir, settings.activeLLM),
+    gpu: settings.gpu,
+    nGpuLayers: settings.nGpuLayers,
     createPrompt: async (messages) =>
       (await ChatPromptTemplate.fromMessages(messages).format({})) +
-      "\nAssistant:\n",
+      "\nAssistant:",
     stop: [
       "\nHuman:",
       "\nhuman:",

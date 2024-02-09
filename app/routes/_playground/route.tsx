@@ -155,7 +155,7 @@ export default function Playground() {
                 {chats.map((chat) => (
                   <li
                     key={chat.id}
-                    className="flex items-center gap-2 border-b border-border"
+                    className="flex items-center gap-2 border-b border-border pr-0.5"
                   >
                     <NavLink
                       className="flex-1 flex flex-col px-4 py-2"

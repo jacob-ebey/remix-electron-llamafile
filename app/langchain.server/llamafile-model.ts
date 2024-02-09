@@ -14,6 +14,8 @@ export interface LlamafileModelParams extends BaseChatModelParams {
   modelPath?: string;
   temperature?: number;
   stop?: string[];
+  gpu?: string;
+  nGpuLayers?: number | string;
   createPrompt: (messages: BaseMessage[]) => Promise<string>;
 }
 
@@ -38,14 +40,16 @@ export class LlamafileModel extends SimpleChatModel {
       throw new Error("Message content must be a string.");
     }
 
-    // flags we want: --silent-prompt -n -2
     const args: string[] = [];
     if (this.params.modelPath) args.push("-m", this.params.modelPath);
     if (typeof this.params.temperature === "number")
       args.push("--temp", this.params.temperature.toString());
 
-    if (process.platform === "win32") {
-      args.push("-ngl", "35");
+    if (this.params.gpu) {
+      args.push("--gpu", this.params.gpu);
+    }
+    if (this.params.nGpuLayers) {
+      args.push("-ngl", this.params.nGpuLayers.toString());
     }
 
     const controller = new AbortController();

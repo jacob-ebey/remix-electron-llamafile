@@ -36,7 +36,8 @@ import {
   getSettings,
   writeSettings,
 } from "@/data.server/settings";
-import { cn } from "@/lib/utils";
+import { cn, debounce } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
 
 export const meta: MetaFunction = () => {
   return [
@@ -46,18 +47,24 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = serverOnly$(async () => {
-  const [llamafileDirectory, llms, prompts, { activeLLM, promptId }] =
-    await Promise.all([
-      getLlamafileDirectory(),
-      getLLMs(),
-      getPrompts(),
-      getSettings(),
-    ]);
+  const [
+    llamafileDirectory,
+    llms,
+    prompts,
+    { activeLLM, gpu, promptId, nGpuLayers },
+  ] = await Promise.all([
+    getLlamafileDirectory(),
+    getLLMs(),
+    getPrompts(),
+    getSettings(),
+  ]);
 
   return {
     activeLLM,
+    gpu,
     llamafileDirectory,
     llms,
+    nGpuLayers,
     promptId,
     prompts,
   };
@@ -67,17 +74,46 @@ export const action = serverOnly$(async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const intent = formData.get("intent");
   switch (intent) {
-    case "select-model":
+    case "select-model": {
       const model = String(formData.get("model") || "");
       const settings = await getSettings();
       settings.activeLLM = model;
       await writeSettings(settings);
       return { success: true };
-    case "add-prompt":
+    }
+    case "add-prompt": {
       const content = String(formData.get("content") || "");
       await addPrompt(content);
       return { success: true };
-    default:
+    }
+    case "set-gpu": {
+      const gpu = String(formData.get("gpu") || "");
+      if (
+        !gpu ||
+        !["AUTO", "APPLE", "AMD", "NVIDIA", "DISABLE"].includes(gpu)
+      ) {
+        return { success: false };
+      }
+      const settings = await getSettings();
+      settings.gpu = gpu;
+      await writeSettings(settings);
+      return { success: true };
+    }
+    case "set-n-gpu-layers": {
+      let toSet = undefined;
+      const raw = formData.get("n-gpu-layers");
+      if (raw) {
+        const nGpuLayers = Number(raw);
+        if (Number.isSafeInteger(nGpuLayers)) {
+          toSet = nGpuLayers;
+        }
+      }
+      const settings = await getSettings();
+      settings.nGpuLayers = toSet;
+      await writeSettings(settings);
+      return { success: true };
+    }
+    default: {
       const selectPromptId = formData.get("select-prompt");
       if (typeof selectPromptId === "string" && selectPromptId) {
         const settings = await getSettings();
@@ -92,13 +128,23 @@ export const action = serverOnly$(async ({ request }: ActionFunctionArgs) => {
         return { success: true };
       }
       throw new Error("Invalid intent");
+    }
   }
 });
 
 export default function Index() {
-  const { activeLLM, llamafileDirectory, llms, promptId, prompts } =
-    useLoaderData<typeof loader>();
+  const {
+    activeLLM,
+    gpu,
+    llamafileDirectory,
+    llms,
+    nGpuLayers,
+    promptId,
+    prompts,
+  } = useLoaderData<typeof loader>();
   const selectModelFetcher = useFetcher<typeof action>();
+  const selectGPUFetcher = useFetcher<typeof action>();
+  const setNGPULayersFetcher = useFetcher<typeof action>();
   const revalidator = useRevalidator();
 
   return (
@@ -221,6 +267,60 @@ export default function Index() {
         <CardFooter className="text-sm text-muted-foreground">
           Configurable via $LLAMAFILE_PATH
         </CardFooter>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>GPU Settings</CardTitle>
+          <CardDescription>Dragons ahead.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Select
+            value={gpu}
+            onValueChange={(value) => {
+              const formData = new FormData();
+              formData.append("intent", "set-gpu");
+              formData.append("gpu", value);
+              selectGPUFetcher.submit(formData, { method: "POST" });
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select a GPU" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="AUTO">AUTO</SelectItem>
+                <SelectItem value="APPLE">APPLE</SelectItem>
+                <SelectItem value="AMD">AMD</SelectItem>
+                <SelectItem value="NVIDIA">NVIDIA</SelectItem>
+                <SelectItem value="DISABLE">DISABLE</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+
+          <div>
+            <Label htmlFor="n-gpu-layers" className="mb-2 block">
+              n-gpu-layers
+            </Label>
+            <Input
+              id="n-gpu-layers"
+              defaultValue={nGpuLayers}
+              type="text"
+              inputMode="numeric"
+              onChange={debounce((event) => {
+                const value = event.target.value;
+                const formData = new FormData();
+                formData.append("intent", "set-n-gpu-layers");
+                formData.append("n-gpu-layers", String(value));
+                setNGPULayersFetcher.submit(formData, { method: "POST" });
+              }, 200)}
+            />
+            <p className="mt-1 text-sm text-muted-foreground">
+              Number of layers to store in VRAM. Must be 35 in order to use GPUs
+              made by NVIDIA and AMD.
+            </p>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

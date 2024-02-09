@@ -83,6 +83,18 @@ export async function getSettings() {
       settings.baseLlamafile = undefined;
     }
 
+    if (
+      !settings.gpu ||
+      !["AUTO", "APPLE", "AMD", "NVIDIA", "DISABLE"].includes(settings.gpu)
+    ) {
+      settings.gpu = "AUTO";
+    }
+    if (typeof settings.nGpuLayers === "number") {
+      settings.nGpuLayers = settings.nGpuLayers.toString();
+    } else if (!settings.nGpuLayers) {
+      settings.nGpuLayers = undefined;
+    }
+
     return settings;
   } catch (error) {
     return {};
