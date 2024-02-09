@@ -1,11 +1,8 @@
-name: Build/release
+name: Release
 on:
   push:
     branches:
       - main
-  release:
-    types:
-      - created
 
 permissions:
   contents: write
@@ -29,11 +26,17 @@ jobs:
         run: npm run rebuild
       - name: Build
         run: npm run build
+      - uses: google-github-actions/release-please-action@v4
+        id: release
+        with:
+          release-type: node
       - name: Publish app
+        if: ${{ steps.release.outputs.release_created }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run publish
       - uses: actions/upload-artifact@v2
+        if: ${{ steps.release.outputs.release_created }}
         with:
-          name: ancient-warriors-launcher-v${{needs.check-version.outputs.VERSION}}
+          name: remix-electron-llamafile-${{ steps.release.outputs.tag_name }}-${{ matrix.os }}
           path: out/make
