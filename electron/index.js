@@ -8,7 +8,6 @@ import { app, BrowserWindow, session, protocol } from "electron";
 import squirrelStartup from "electron-squirrel-startup";
 import { createRequestHandler } from "@remix-run/node";
 import * as mime from "mime-types";
-import { updateElectronApp } from "update-electron-app";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -65,8 +64,6 @@ if (viteDevServer) {
   } else {
     throw new Error("Failed to get dev server port");
   }
-} else {
-  updateElectronApp();
 }
 
 app.whenReady().then(async () => {
