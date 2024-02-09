@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Chat with LLMs locally utilizing llamafile as the underlying model executor.",
   "license": "MIT",
+  "author": {
+    "name": "Jacob Ebey"
+  },
   "private": true,
   "sideEffects": false,
   "type": "module",
