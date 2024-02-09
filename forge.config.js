@@ -1,5 +1,6 @@
 export default {
   packagerConfig: {
+    asar: true,
     extraFiles: ["./drizzle"],
   },
   rebuildConfig: {},
