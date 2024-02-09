@@ -100,6 +100,10 @@ export async function getChat(id: string) {
   });
 }
 
+export async function deleteChat(id: string) {
+  await db.delete(chat).where(eq(chat.id, id));
+}
+
 export async function getMessages(chatId: string) {
   return await db.query.message.findMany({
     where: eq(message.chatId, chatId),

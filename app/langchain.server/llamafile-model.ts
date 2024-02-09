@@ -44,6 +44,10 @@ export class LlamafileModel extends SimpleChatModel {
     if (typeof this.params.temperature === "number")
       args.push("--temp", this.params.temperature.toString());
 
+    if (process.platform === "win32") {
+      args.push("-ngl", "35");
+    }
+
     const controller = new AbortController();
     let manuallyAborted = false;
     const abort = () => {
@@ -55,21 +59,9 @@ export class LlamafileModel extends SimpleChatModel {
     console.log(`Starting llamafile process ${debugId}`);
     const llamafileProcess = execa(
       this.params.executablePath,
-      [
-        ...args,
-        "-n",
-        "-2",
-        "--silent-prompt",
-        "-f",
-        "/dev/stdin",
-        // "-p",
-        // (await this.params.createPrompt(_messages)).replace(" ", "\\ "),
-      ],
+      [...args, "-n", "-2", "--silent-prompt", "-f", "/dev/stdin"],
       {
         shell: true,
-        // cwd: path.dirname(this.params.executablePath),
-        // localDir: path.dirname(this.params.executablePath),
-        // preferLocal: true,
         signal: controller.signal,
         stdout: "pipe",
         stderr: "pipe",

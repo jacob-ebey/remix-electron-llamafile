@@ -4,6 +4,7 @@ import {
   useLoaderData,
   type MetaFunction,
   Form,
+  useRevalidator,
 } from "@remix-run/react";
 import { type ActionFunctionArgs } from "@remix-run/node";
 import { serverOnly$ } from "vite-env-only";
@@ -98,6 +99,7 @@ export default function Index() {
   const { activeLLM, llamafileDirectory, llms, promptId, prompts } =
     useLoaderData<typeof loader>();
   const selectModelFetcher = useFetcher<typeof action>();
+  const revalidator = useRevalidator();
 
   return (
     <div className="container py-4 space-y-4 flex-1 min-h-0 overflow-auto">
@@ -191,7 +193,11 @@ export default function Index() {
                 </SelectGroup>
               </SelectContent>
             </Select>
-            <Button size="icon" variant="outline">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => revalidator.revalidate()}
+            >
               <span className="sr-only">refresh LLMs</span>
               <ReloadIcon />
             </Button>

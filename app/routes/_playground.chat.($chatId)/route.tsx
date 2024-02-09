@@ -24,6 +24,7 @@ import {
   createChat,
   createChatMessage,
   createStreamingChatMessage,
+  deleteChat,
   getChat,
   getMessages,
 } from "@/data.server/chat";
@@ -67,78 +68,93 @@ const sendMessageSchema = z.object({
 
 export const action = serverOnly$(
   async ({ context, request, params: { chatId } }: ActionFunctionArgs) => {
-    const send = context?.ipcEvent as (
-      event: string,
-      ...args: unknown[]
-    ) => void;
-
-    if (!chatId) {
-      chatId = await createChat();
-    }
-
-    if (!chatId) throw new Error("Chat ID not found or could not be created.");
-
     const formData = await request.formData();
     const submission = parseWithZod(formData, { schema: sendMessageSchema });
 
-    if (submission.status !== "success") {
-      return {
-        chatId: null,
-        aiMessageId: null,
-        lastResult: submission.reply(),
-      };
+    switch (formData.get("intent")) {
+      case "send-message":
+        const send = context?.ipcEvent as (
+          event: string,
+          ...args: unknown[]
+        ) => void;
+
+        const chat = chatId ? await getChat(chatId) : null;
+        if (chat) {
+          chatId = chat.id;
+        } else {
+          chatId = await createChat();
+        }
+
+        if (!chatId)
+          throw new Error("Chat ID not found or could not be created.");
+
+        if (submission.status !== "success") {
+          return {
+            chatId: null,
+            aiMessageId: null,
+            lastResult: submission.reply(),
+          };
+        }
+
+        const chatController = new AbortController();
+        const abortChatController = () => chatController.abort();
+        request.signal.addEventListener("abort", abortChatController, {
+          once: true,
+        });
+        const completion = await streamChatCompletion(
+          chatId,
+          submission.value.prompt,
+          chatController.signal
+        );
+        await createChatMessage(chatId, "human", submission.value.prompt);
+
+        let finalMessage = "";
+        const output = completion.pipeThrough(
+          new TransformStream({
+            transform(chunk, controller) {
+              controller.enqueue(chunk);
+              finalMessage += chunk;
+              if (typeof send === "function") {
+                send(`message-update`, {
+                  id: aiMessageId,
+                  done: false,
+                  value: finalMessage.trim(),
+                });
+              }
+            },
+            flush() {
+              if (typeof send === "function") {
+                send(`message-update`, {
+                  id: aiMessageId,
+                  done: true,
+                  value: finalMessage.trim(),
+                });
+              }
+            },
+          })
+        );
+        const aiMessageId = await createStreamingChatMessage(
+          chatId,
+          "assistant",
+          output
+        );
+
+        request.signal.removeEventListener("abort", abortChatController);
+
+        return {
+          chatId,
+          aiMessageId,
+          lastResult: submission.reply({}),
+        };
+      default:
+        const deleteChatId = formData.get("delete-chat");
+        if (typeof deleteChatId === "string" && deleteChatId) {
+          await deleteChat(deleteChatId);
+          return { success: false };
+        }
+
+        throw new Error("Invalid form submission.");
     }
-
-    const chatController = new AbortController();
-    const abortChatController = () => chatController.abort();
-    request.signal.addEventListener("abort", abortChatController, {
-      once: true,
-    });
-    const completion = await streamChatCompletion(
-      chatId,
-      submission.value.prompt,
-      chatController.signal
-    );
-    await createChatMessage(chatId, "human", submission.value.prompt);
-
-    let finalMessage = "";
-    const output = completion.pipeThrough(
-      new TransformStream({
-        transform(chunk, controller) {
-          controller.enqueue(chunk);
-          finalMessage += chunk;
-          if (typeof send === "function") {
-            send(`message-update`, {
-              id: aiMessageId,
-              done: false,
-              value: finalMessage.trim(),
-            });
-          }
-        },
-        flush() {
-          if (typeof send === "function") {
-            send(`message-update`, {
-              id: aiMessageId,
-              done: true,
-              value: finalMessage.trim(),
-            });
-          }
-        },
-      })
-    );
-    const aiMessageId = await createStreamingChatMessage(
-      chatId,
-      "assistant",
-      output
-    );
-
-    request.signal.removeEventListener("abort", abortChatController);
-
-    return {
-      chatId,
-      aiMessageId,
-      lastResult: submission.reply({}),
-    };
   }
 );
 
@@ -176,7 +192,9 @@ function Message({
 }
 
 export default function Index() {
-  const actionData = useActionData<typeof action>();
+  const _actionData = useActionData<typeof action>();
+  const actionData =
+    _actionData && "lastResult" in _actionData ? _actionData : undefined;
   const { messages: loaderMessages } = useLoaderData<typeof loader>();
   const { chatId } = useParams();
   const navigate = useNavigate();
@@ -258,6 +276,7 @@ export default function Index() {
         method="POST"
         className="space-y-4 container py-4 border-t border-border"
       >
+        <input type="hidden" name="intent" value="send-message" />
         <Textarea
           {...getTextareaProps(sendMessageFields.prompt)}
           disabled={isDownloadingStuff}

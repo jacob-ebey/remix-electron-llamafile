@@ -3,8 +3,11 @@ import {
   GearIcon,
   HamburgerMenuIcon,
   PlusIcon,
+  TrashIcon,
 } from "@radix-ui/react-icons";
+import { type ActionFunctionArgs } from "@remix-run/node";
 import {
+  Form,
   Link,
   NavLink,
   Outlet,
@@ -29,7 +32,6 @@ import {
 import { listChats } from "@/data.server/chat";
 import { getSettings } from "@/data.server/settings";
 import { cn } from "@/lib/utils";
-import { flushSync } from "react-dom";
 
 export const loader = serverOnly$(async () => {
   const [chats, settings] = await Promise.all([listChats(), getSettings()]);
@@ -41,18 +43,6 @@ export const loader = serverOnly$(async () => {
   return { chats };
 });
 
-function setViewTransitionState(updater: () => void) {
-  return () => {
-    if (typeof document.startViewTransition === "function") {
-      document.startViewTransition(() => {
-        flushSync(updater);
-      });
-    } else {
-      updater();
-    }
-  };
-}
-
 export default function Playground() {
   const { chats } = useLoaderData<typeof loader>();
   const location = useLocation();
@@ -63,8 +53,8 @@ export default function Playground() {
   const [explicitelyShowList, setExplicitelyShowList] = React.useState(false);
   const showList = explicitelyShowList || location.pathname === "/";
 
-  const closeList = setViewTransitionState(() => setExplicitelyShowList(false));
-  const openList = setViewTransitionState(() => setExplicitelyShowList(true));
+  const closeList = () => setExplicitelyShowList(false);
+  const openList = () => setExplicitelyShowList(true);
 
   return (
     <div className="h-full flex flex-col">
@@ -106,7 +96,7 @@ export default function Playground() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button asChild size="icon" variant="outline">
-                  <Link unstable_viewTransition to="/chat" onClick={closeList}>
+                  <Link to="/chat" onClick={closeList}>
                     <span className="sr-only">New Chat</span>
                     <PlusIcon />
                   </Link>
@@ -120,11 +110,7 @@ export default function Playground() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button asChild size="icon" variant="outline">
-                  <Link
-                    unstable_viewTransition
-                    to="/settings"
-                    onClick={closeList}
-                  >
+                  <Link to="/settings" onClick={closeList}>
                     <span className="sr-only">Settings</span>
                     <GearIcon />
                   </Link>
@@ -150,7 +136,7 @@ export default function Playground() {
         )}
         <nav
           className={cn(
-            "flex-col border-r border-border min-h-0 overflow-y-auto",
+            "flex-col border-r border-border min-h-0 overflow-y-auto relative",
             showList ? "w-full md:w-64 flex" : "hidden md:flex w-64"
           )}
         >
@@ -164,21 +150,34 @@ export default function Playground() {
           {!chats?.length ? (
             <p className="px-4 py-2 text-muted-foreground">No chats...</p>
           ) : (
-            chats.map((chat) => (
-              <NavLink
-                unstable_viewTransition
-                className={({ isActive }) =>
-                  cn("flex flex-col px-4 py-2 border-b border-border", {
-                    "bg-muted text-muted-foreground": isActive,
-                  })
-                }
-                key={chat.id}
-                to={`/chat/${chat.id}`}
-                onClick={closeList}
-              >
-                {chat.title}
-              </NavLink>
-            ))
+            <Form navigate={false} action="/chat" method="POST">
+              <ul>
+                {chats.map((chat) => (
+                  <li
+                    key={chat.id}
+                    className="flex items-center gap-2 border-b border-border"
+                  >
+                    <NavLink
+                      className="flex-1 flex flex-col px-4 py-2"
+                      to={`/chat/${chat.id}`}
+                      onClick={closeList}
+                    >
+                      {chat.title}
+                    </NavLink>
+                    <Button
+                      type="submit"
+                      name="delete-chat"
+                      value={chat.id}
+                      variant="destructive"
+                      size="icon"
+                    >
+                      <span className="sr-only">delete chat</span>
+                      <TrashIcon />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </Form>
           )}
         </nav>
         <div

@@ -4,6 +4,7 @@ import {
   useFetcher,
   useLoaderData,
   redirect,
+  useRevalidator,
 } from "@remix-run/react";
 import { type ActionFunctionArgs } from "@remix-run/node";
 import { ReloadIcon } from "@radix-ui/react-icons";
@@ -96,6 +97,7 @@ export default function Setup() {
     useLoaderData<typeof loader>();
   const downloadLlamafileFetcher = useFetcher();
   const selectModelFetcher = useFetcher();
+  const revalidator = useRevalidator();
 
   const showDownloadBase =
     !baseLlamafile || (baseLlamafile && !!downloadLlamafileFetcher.data);
@@ -216,7 +218,11 @@ export default function Setup() {
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-                <Button size="icon" variant="outline">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => revalidator.revalidate()}
+                >
                   <span className="sr-only">refresh LLMs</span>
                   <ReloadIcon />
                 </Button>
