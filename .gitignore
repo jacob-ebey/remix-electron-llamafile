@@ -1,8 +1,8 @@
 .DS_Store
 node_modules
 
-/.cache
+.cache
 build
 .env
 *.log
-out/
+out
